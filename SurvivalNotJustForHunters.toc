@@ -1,0 +1,10 @@
+## Interface: 16001
+## Title: Survival: Not Just For Hunters
+## Notes: Adds survival elements to WoW
+## Author: Judiasmon
+## Version: 1.0.0
+## RequiredDeps:
+## X-Curse-Project-ID: 1730474
+## SavedVariables: SurvivalNotJustForHuntersDB
+Survival.lua
+UI.lua

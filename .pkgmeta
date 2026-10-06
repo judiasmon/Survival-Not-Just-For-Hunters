@@ -1,0 +1,7 @@
+package-as: SurvivalNotJustForHunters
+
+ignore:
+  - .git
+  - .github
+  - .vscode
+  - "*.zip"
