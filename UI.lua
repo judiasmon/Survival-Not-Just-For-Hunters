@@ -113,8 +113,13 @@ function addon:CreateUI()
 
     SLASH_SURVIVALNOTJUSTFORHUNTERS1 = "/survival"
     SLASH_SURVIVALNOTJUSTFORHUNTERS2 = "/snjh"
-    SlashCmdList.SURVIVALNOTJUSTFORHUNTERS = function()
-        self:ToggleSettings()
+    SlashCmdList.SURVIVALNOTJUSTFORHUNTERS = function(message)
+        local command = string.lower(string.match(message or "", "^%s*(.-)%s*$"))
+        if command == "auras" then
+            self:DebugAuras()
+        else
+            self:ToggleSettings()
+        end
     end
 
     local minimapButton = CreateFrame("Button", "SurvivalNotJustForHuntersMinimapButton", Minimap)

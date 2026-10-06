@@ -199,6 +199,73 @@ getConsumptionBuffs = function()
     return isEating, isDrinking
 end
 
+local function formatAuraValue(value)
+    if type(value) == "table" then
+        local fields = {}
+        for _, key in ipairs({
+            "name", "icon", "spellId", "applications", "duration",
+            "expirationTime", "sourceUnit",
+        }) do
+            if value[key] ~= nil then
+                fields[#fields + 1] = key .. "=" .. tostring(value[key])
+            end
+        end
+        return "{" .. table.concat(fields, ", ") .. "}"
+    end
+    return tostring(value)
+end
+
+function addon:DebugAuras()
+    local function report(message)
+        if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffSurvival:|r " .. message)
+        else
+            print("Survival: " .. message)
+        end
+    end
+
+    local isEating, isDrinking = getConsumptionBuffs()
+    report(string.format("Detected eating=%s, drinking=%s",
+        tostring(isEating), tostring(isDrinking)))
+
+    local getBuff = UnitBuff or UnitAura
+    if getBuff then
+        report("Raw aura results from " .. (UnitBuff and "UnitBuff" or "UnitAura") .. ":")
+        local foundAura = false
+        for index = 1, 40 do
+            local aura = pack(getBuff("player", index))
+            if not aura[1] then
+                break
+            end
+
+            foundAura = true
+            local values = {}
+            for auraIndex = 1, aura.n do
+                if aura[auraIndex] ~= nil then
+                    values[#values + 1] = auraIndex .. "=" .. formatAuraValue(aura[auraIndex])
+                end
+            end
+            report(string.format("%d: %s", index, table.concat(values, " | ")))
+        end
+        if not foundAura then
+            report("No auras returned.")
+        end
+    else
+        report("UnitBuff and UnitAura are unavailable.")
+    end
+
+    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+        report("Raw aura results from C_UnitAuras:")
+        for index = 1, 40 do
+            local aura = C_UnitAuras.GetAuraDataByIndex("player", index, "HELPFUL")
+            if not aura then
+                break
+            end
+            report(string.format("%d: %s", index, formatAuraValue(aura)))
+        end
+    end
+end
+
 local function onEvent(_, event, ...)
     if event == "PLAYER_LOGIN" then
         copyDefaults()
