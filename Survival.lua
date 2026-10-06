@@ -2,6 +2,7 @@ local addonName, addon = ...
 
 local MAX_VALUE = 100
 local UPDATE_INTERVAL = 1
+local CANNIBALIZE_SPELL_ID = 20577
 local getConsumptionBuffs
 
 local function pack(...)
@@ -65,6 +66,15 @@ end
 
 getConsumptionBuffs = function()
     local isEating, isDrinking = false, false
+    if UnitChannelInfo then
+        local channel = pack(UnitChannelInfo("player"))
+        if channel[8] == CANNIBALIZE_SPELL_ID then
+            isEating = true
+        elseif channel[1] and GetSpellInfo then
+            isEating = channel[1] == GetSpellInfo(CANNIBALIZE_SPELL_ID)
+        end
+    end
+
     local getBuff = UnitBuff or UnitAura
     if not getBuff then
         return isEating, isDrinking
