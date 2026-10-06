@@ -4,7 +4,6 @@ local MAX_VALUE = 100
 local UPDATE_INTERVAL = 1
 -- Undead racial ability channel; counted as eating for hunger recovery.
 local CANNIBALIZE_SPELL_ID = 20577
--- Food/eating aura spell IDs.
 local FOOD_SPELL_IDS = {
     [433] = true,
     [434] = true,
@@ -13,7 +12,6 @@ local FOOD_SPELL_IDS = {
     [1129] = true,
     [1131] = true,
 }
--- Drink/drinking aura spell IDs.
 local DRINK_SPELL_IDS = {
     [430] = true,
     [431] = true,
