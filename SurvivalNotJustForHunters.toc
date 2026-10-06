@@ -10,7 +10,12 @@
 Survival.lua
 # Survival mechanics
 Auras.lua
+Temperature.lua
 Needs.lua
+Fatigue.lua
+Feedback.lua
+Statistics.lua
 # Diagnostics and interface
 Debug.lua
+Windows.lua
 UI.lua

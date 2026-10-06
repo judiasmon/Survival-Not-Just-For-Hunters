@@ -2,6 +2,7 @@ local addonName, addon = ...
 
 function addon:GetDrainModifiers(state)
     state = state or self:GetConsumptionState()
+    local temperature = self:GetTemperatureState()
 
     local movement = 1
     if GetUnitSpeed and GetUnitSpeed("player") > 0
@@ -12,20 +13,27 @@ function addon:GetDrainModifiers(state)
     local combat = UnitAffectingCombat and UnitAffectingCombat("player")
         and self.db.combatDrainMultiplier or 1
     local wellFed = state.wellFed and self.db.wellFedDrainMultiplier or 1
+    local temperatureHunger = temperature.value < 0
+        and 1 + math.abs(temperature.value) * self.db.temperatureDrainPerLevel or 1
+    local temperatureThirst = temperature.value > 0
+        and 1 + temperature.value * self.db.temperatureDrainPerLevel or 1
 
     return {
         movement = movement,
         combat = combat,
         wellFed = wellFed,
         total = movement * combat * wellFed,
+        temperature = temperature.value,
+        temperatureHunger = temperatureHunger,
+        temperatureThirst = temperatureThirst,
     }
 end
 
 function addon:GetDrainRates(state)
     local modifiers = self:GetDrainModifiers(state)
     local multiplier = self.db.depletionEnabled and modifiers.total or 0
-    return self.db.hungerDrain * multiplier,
-        self.db.thirstDrain * multiplier,
+    return self.db.hungerDrain * multiplier * modifiers.temperatureHunger,
+        self.db.thirstDrain * multiplier * modifiers.temperatureThirst,
         modifiers
 end
 
@@ -45,6 +53,7 @@ function addon:UpdateNeeds(elapsed)
             and 100 / state.drinkingDuration or self.db.thirstRestore
         self.db.thirst = math.min(self.MAX_VALUE, self.db.thirst + rate * elapsed)
     end
+    return state
 end
 
 function addon:RestoreNeeds(need, amount)
