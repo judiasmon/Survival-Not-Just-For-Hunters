@@ -58,7 +58,7 @@ local function copyDefaults()
 end
 
 local function updateNeeds(elapsed)
-    local isEating, isDrinking, isWellFed, eatingRemaining, drinkingRemaining = getConsumptionBuffs()
+    local isEating, isDrinking, isWellFed, eatingDuration, drinkingDuration = getConsumptionBuffs()
 
     if addon.db.depletionEnabled then
         local drainMultiplier = isWellFed and addon.db.wellFedDrainMultiplier or 1
@@ -69,22 +69,18 @@ local function updateNeeds(elapsed)
     end
 
     if isEating then
-        local remaining = eatingRemaining
-        if remaining and remaining > 0 then
-            local missing = MAX_VALUE - addon.db.hunger
+        if eatingDuration and eatingDuration > 0 then
             addon.db.hunger = math.min(MAX_VALUE,
-                addon.db.hunger + missing * math.min(elapsed / remaining, 1))
+                addon.db.hunger + MAX_VALUE / eatingDuration * elapsed)
         else
             addon.db.hunger = math.min(MAX_VALUE,
                 addon.db.hunger + addon.db.hungerRestore * elapsed)
         end
     end
     if isDrinking then
-        local remaining = drinkingRemaining
-        if remaining and remaining > 0 then
-            local missing = MAX_VALUE - addon.db.thirst
+        if drinkingDuration and drinkingDuration > 0 then
             addon.db.thirst = math.min(MAX_VALUE,
-                addon.db.thirst + missing * math.min(elapsed / remaining, 1))
+                addon.db.thirst + MAX_VALUE / drinkingDuration * elapsed)
         else
             addon.db.thirst = math.min(MAX_VALUE,
                 addon.db.thirst + addon.db.thirstRestore * elapsed)
@@ -104,15 +100,7 @@ end
 
 getConsumptionBuffs = function()
     local isEating, isDrinking, isWellFed = false, false, false
-    local eatingRemaining, drinkingRemaining
-
-    local function getRemainingAuraTime(duration, expirationTime)
-        if not duration or duration <= 0 or not expirationTime or expirationTime <= 0 then
-            return nil
-        end
-        local now = GetTime and GetTime() or time()
-        return math.max(0, expirationTime - now)
-    end
+    local eatingDuration, drinkingDuration
 
     if UnitChannelInfo then
         local channel = pack(UnitChannelInfo("player"))
@@ -161,12 +149,12 @@ getConsumptionBuffs = function()
                 or auraName:find("drink", 1, true) ~= nil
             local auraWellFed = spellWellFed or auraName:find("well fed", 1, true) ~= nil
 
-            local remaining = getRemainingAuraTime(aura.duration, aura.expirationTime)
-            if auraEating and remaining then
-                eatingRemaining = remaining
+            local duration = aura.duration
+            if auraEating and duration and duration > 0 then
+                eatingDuration = duration
             end
-            if auraDrinking and remaining then
-                drinkingRemaining = remaining
+            if auraDrinking and duration and duration > 0 then
+                drinkingDuration = duration
             end
 
             isEating = isEating or auraEating
@@ -240,12 +228,12 @@ getConsumptionBuffs = function()
             end
         end
 
-        local remaining = getRemainingAuraTime(aura[6], aura[7])
-        if isEating and remaining then
-            eatingRemaining = remaining
+        local duration = aura[6]
+        if isEating and type(duration) == "number" and duration > 0 then
+            eatingDuration = duration
         end
-        if isDrinking and remaining then
-            drinkingRemaining = remaining
+        if isDrinking and type(duration) == "number" and duration > 0 then
+            drinkingDuration = duration
         end
 
         if spellID == CANNIBALIZE_SPELL_ID then
@@ -284,7 +272,7 @@ getConsumptionBuffs = function()
         end
     end
 
-    return isEating, isDrinking, isWellFed, eatingRemaining, drinkingRemaining
+    return isEating, isDrinking, isWellFed, eatingDuration, drinkingDuration
 end
 
 local function formatAuraValue(value)
