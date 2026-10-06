@@ -34,6 +34,8 @@ addon.defaults = {
     thirstDrain = 0.018,
     hungerRestore = 1,
     thirstRestore = 1.5,
+    movementDrainMultiplier = 2,
+    combatDrainMultiplier = 2,
     wellFedDrainMultiplier = 0.5,
     depletionEnabled = true,
     barsShown = true,
@@ -62,6 +64,15 @@ local function updateNeeds(elapsed)
 
     if addon.db.depletionEnabled then
         local drainMultiplier = isWellFed and addon.db.wellFedDrainMultiplier or 1
+        local isMoving = GetUnitSpeed and GetUnitSpeed("player") > 0
+        local isMounted = IsMounted and IsMounted()
+        local inCombat = UnitAffectingCombat and UnitAffectingCombat("player")
+        if isMoving and not isMounted then
+            drainMultiplier = drainMultiplier * addon.db.movementDrainMultiplier
+        end
+        if inCombat then
+            drainMultiplier = drainMultiplier * addon.db.combatDrainMultiplier
+        end
         addon.db.hunger = math.max(0,
             addon.db.hunger - addon.db.hungerDrain * drainMultiplier * elapsed)
         addon.db.thirst = math.max(0,
