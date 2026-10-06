@@ -363,6 +363,10 @@ local function onEvent(_, event, ...)
         addon.db.lastUpdate = now
         addon:CreateUI()
         addon:UpdateDisplay()
+    elseif event == "PLAYER_DEAD" and addon.db then
+        addon.db.hunger = MAX_VALUE
+        addon.db.thirst = MAX_VALUE
+        addon:UpdateDisplay()
     elseif event == "PLAYER_LOGOUT" and addon.db then
         addon.db.lastUpdate = time()
     end
@@ -370,6 +374,7 @@ end
 
 local ticker = CreateFrame("Frame")
 ticker:RegisterEvent("PLAYER_LOGIN")
+ticker:RegisterEvent("PLAYER_DEAD")
 ticker:RegisterEvent("PLAYER_LOGOUT")
 ticker:SetScript("OnEvent", onEvent)
 ticker:SetScript("OnUpdate", function(self, elapsed)
