@@ -2,7 +2,6 @@ local addonName, addon = ...
 
 local MAX_VALUE = 100
 local UPDATE_INTERVAL = 1
--- Undead racial ability channel; counted as eating for hunger recovery.
 local CANNIBALIZE_SPELL_ID = 20577
 local FOOD_SPELL_IDS = {
     [433] = true,
@@ -35,6 +34,7 @@ addon.defaults = {
     thirstDrain = 0.018,
     hungerRestore = 1,
     thirstRestore = 1.5,
+    wellFedDrainMultiplier = 0.5,
     depletionEnabled = true,
     barsShown = true,
     barX = 0,
@@ -58,17 +58,37 @@ local function copyDefaults()
 end
 
 local function updateNeeds(elapsed)
+    local isEating, isDrinking, isWellFed, eatingRemaining, drinkingRemaining = getConsumptionBuffs()
+
     if addon.db.depletionEnabled then
-        addon.db.hunger = math.max(0, addon.db.hunger - addon.db.hungerDrain * elapsed)
-        addon.db.thirst = math.max(0, addon.db.thirst - addon.db.thirstDrain * elapsed)
+        local drainMultiplier = isWellFed and addon.db.wellFedDrainMultiplier or 1
+        addon.db.hunger = math.max(0,
+            addon.db.hunger - addon.db.hungerDrain * drainMultiplier * elapsed)
+        addon.db.thirst = math.max(0,
+            addon.db.thirst - addon.db.thirstDrain * drainMultiplier * elapsed)
     end
 
-    local isEating, isDrinking = getConsumptionBuffs()
     if isEating then
-        addon.db.hunger = math.min(MAX_VALUE, addon.db.hunger + addon.db.hungerRestore * elapsed)
+        local remaining = eatingRemaining
+        if remaining and remaining > 0 then
+            local missing = MAX_VALUE - addon.db.hunger
+            addon.db.hunger = math.min(MAX_VALUE,
+                addon.db.hunger + missing * math.min(elapsed / remaining, 1))
+        else
+            addon.db.hunger = math.min(MAX_VALUE,
+                addon.db.hunger + addon.db.hungerRestore * elapsed)
+        end
     end
     if isDrinking then
-        addon.db.thirst = math.min(MAX_VALUE, addon.db.thirst + addon.db.thirstRestore * elapsed)
+        local remaining = drinkingRemaining
+        if remaining and remaining > 0 then
+            local missing = MAX_VALUE - addon.db.thirst
+            addon.db.thirst = math.min(MAX_VALUE,
+                addon.db.thirst + missing * math.min(elapsed / remaining, 1))
+        else
+            addon.db.thirst = math.min(MAX_VALUE,
+                addon.db.thirst + addon.db.thirstRestore * elapsed)
+        end
     end
 end
 
@@ -83,7 +103,17 @@ function addon:RestoreNeeds(need, amount)
 end
 
 getConsumptionBuffs = function()
-    local isEating, isDrinking = false, false
+    local isEating, isDrinking, isWellFed = false, false, false
+    local eatingRemaining, drinkingRemaining
+
+    local function getRemainingAuraTime(duration, expirationTime)
+        if not duration or duration <= 0 or not expirationTime or expirationTime <= 0 then
+            return nil
+        end
+        local now = GetTime and GetTime() or time()
+        return math.max(0, expirationTime - now)
+    end
+
     if UnitChannelInfo then
         local channel = pack(UnitChannelInfo("player"))
         if channel[8] == CANNIBALIZE_SPELL_ID then
@@ -93,39 +123,55 @@ getConsumptionBuffs = function()
         end
     end
 
-    local function classifySpellName(spellID)
+    local function getSpellFlags(spellID)
         if not spellID or not GetSpellInfo then
-            return
+            return false, false, false
         end
 
         local spellName = GetSpellInfo(spellID)
         if type(spellName) ~= "string" then
-            return
+            return false, false, false
         end
 
         spellName = string.lower(spellName)
-        isEating = isEating or spellName:find("food", 1, true) ~= nil
-            or spellName:find("eating", 1, true) ~= nil
-        isDrinking = isDrinking or spellName:find("drink", 1, true) ~= nil
+        return spellName:find("food", 1, true) ~= nil
+                or spellName:find("eating", 1, true) ~= nil,
+            spellName:find("drink", 1, true) ~= nil,
+            spellName:find("well fed", 1, true) ~= nil
+    end
+
+    local function classifySpellName(spellID)
+        local eating, drinking, wellFed = getSpellFlags(spellID)
+        isEating = isEating or eating
+        isDrinking = isDrinking or drinking
+        isWellFed = isWellFed or wellFed
     end
 
     local function classifyAura(aura)
         if aura.spellId or aura.name then
-            if FOOD_SPELL_IDS[aura.spellId] then
-                isEating = true
-            elseif DRINK_SPELL_IDS[aura.spellId] then
-                isDrinking = true
-            end
-
-            classifySpellName(aura.spellId)
             local auraName = type(aura.name) == "string" and string.lower(aura.name) or ""
-            isEating = isEating or auraName:find("food", 1, true) ~= nil
+            local spellEating, spellDrinking, spellWellFed = getSpellFlags(aura.spellId)
+            local auraEating = FOOD_SPELL_IDS[aura.spellId] == true
+                or spellEating
+                or auraName:find("food", 1, true) ~= nil
                 or auraName:find("eat", 1, true) ~= nil
-            isDrinking = isDrinking or auraName:find("drink", 1, true) ~= nil
+                or aura.spellId == CANNIBALIZE_SPELL_ID
+            local auraDrinking = DRINK_SPELL_IDS[aura.spellId] == true
+                or spellDrinking
+                or auraName:find("drink", 1, true) ~= nil
+            local auraWellFed = spellWellFed or auraName:find("well fed", 1, true) ~= nil
 
-            if aura.spellId == CANNIBALIZE_SPELL_ID then
-                isEating = true
+            local remaining = getRemainingAuraTime(aura.duration, aura.expirationTime)
+            if auraEating and remaining then
+                eatingRemaining = remaining
             end
+            if auraDrinking and remaining then
+                drinkingRemaining = remaining
+            end
+
+            isEating = isEating or auraEating
+            isDrinking = isDrinking or auraDrinking
+            isWellFed = isWellFed or auraWellFed
             return
         end
 
@@ -188,32 +234,26 @@ getConsumptionBuffs = function()
 
         isEating = isEating or eatingName ~= nil or eatingIcon ~= nil
         isDrinking = isDrinking or drinkingName ~= nil or drinkingIcon ~= nil
+        for _, value in ipairs(stringValues) do
+            if string.lower(value):find("well fed", 1, true) then
+                isWellFed = true
+            end
+        end
+
+        local remaining = getRemainingAuraTime(aura[6], aura[7])
+        if isEating and remaining then
+            eatingRemaining = remaining
+        end
+        if isDrinking and remaining then
+            drinkingRemaining = remaining
+        end
 
         if spellID == CANNIBALIZE_SPELL_ID then
             isEating = true
         end
     end
 
-    local getBuff = UnitBuff or UnitAura
-    if getBuff then
-        for index = 1, 40 do
-            local aura = pack(getBuff("player", index))
-            if not aura[1] then
-                break
-            end
-            classifyAura(aura)
-        end
-    elseif GetPlayerBuff and GetPlayerBuffTexture then
-        for index = 0, 31 do
-            local buffIndex = GetPlayerBuff(index, "HELPFUL")
-            if not buffIndex or buffIndex < 0 then
-                break
-            end
-            local aura = pack(GetPlayerBuffName and GetPlayerBuffName(buffIndex),
-                GetPlayerBuffTexture(buffIndex), GetPlayerBuffID and GetPlayerBuffID(buffIndex))
-            classifyAura(aura)
-        end
-    elseif C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
         for index = 1, 40 do
             local aura = C_UnitAuras.GetAuraDataByIndex("player", index, "HELPFUL")
             if not aura then
@@ -221,9 +261,30 @@ getConsumptionBuffs = function()
             end
             classifyAura(aura)
         end
+    else
+        local getBuff = UnitBuff or UnitAura
+        if getBuff then
+            for index = 1, 40 do
+                local aura = pack(getBuff("player", index))
+                if not aura[1] then
+                    break
+                end
+                classifyAura(aura)
+            end
+        elseif GetPlayerBuff and GetPlayerBuffTexture then
+            for index = 0, 31 do
+                local buffIndex = GetPlayerBuff(index, "HELPFUL")
+                if not buffIndex or buffIndex < 0 then
+                    break
+                end
+                local aura = pack(GetPlayerBuffName and GetPlayerBuffName(buffIndex),
+                    GetPlayerBuffTexture(buffIndex), GetPlayerBuffID and GetPlayerBuffID(buffIndex))
+                classifyAura(aura)
+            end
+        end
     end
 
-    return isEating, isDrinking
+    return isEating, isDrinking, isWellFed, eatingRemaining, drinkingRemaining
 end
 
 local function formatAuraValue(value)
