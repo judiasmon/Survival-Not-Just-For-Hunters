@@ -302,55 +302,94 @@ local function formatAuraValue(value)
     return tostring(value)
 end
 
-function addon:DebugAuras()
-    local function report(message)
-        if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
-            DEFAULT_CHAT_FRAME:AddMessage("|cff66ccffSurvival:|r " .. message)
-        else
-            print("Survival: " .. message)
-        end
-    end
+function addon:GetDebugText()
+    local isEating, isDrinking, isWellFed, eatingDuration, drinkingDuration = getConsumptionBuffs()
+    local isMoving = GetUnitSpeed and GetUnitSpeed("player") > 0 or false
+    local isMounted = IsMounted and IsMounted() or false
+    local inCombat = UnitAffectingCombat and UnitAffectingCombat("player") or false
+    local wellFedMultiplier = isWellFed and self.db.wellFedDrainMultiplier or 1
+    local movementMultiplier = isMoving and not isMounted and self.db.movementDrainMultiplier or 1
+    local combatMultiplier = inCombat and self.db.combatDrainMultiplier or 1
+    local totalMultiplier = wellFedMultiplier * movementMultiplier * combatMultiplier
+    local hungerRate = self.db.depletionEnabled and self.db.hungerDrain * totalMultiplier or 0
+    local thirstRate = self.db.depletionEnabled and self.db.thirstDrain * totalMultiplier or 0
+    local lines = {
+        string.format("Hunger: %.2f%%", self.db.hunger),
+        string.format("Thirst: %.2f%%", self.db.thirst),
+        "",
+        "Current state",
+        "Eating: " .. (isEating and "yes" or "no"),
+        "Drinking: " .. (isDrinking and "yes" or "no"),
+        "Well Fed: " .. (isWellFed and "yes" or "no"),
+        "Moving: " .. (isMoving and "yes" or "no"),
+        "Mounted: " .. (isMounted and "yes" or "no"),
+        "In combat: " .. (inCombat and "yes" or "no"),
+        "",
+        "Current drain modifiers",
+        string.format("Well Fed: x%.2f", wellFedMultiplier),
+        string.format("Unmounted movement: x%.2f", movementMultiplier),
+        string.format("Combat: x%.2f", combatMultiplier),
+        string.format("Combined: x%.2f", totalMultiplier),
+        "",
+        string.format("Hunger drain: %.3f%% per second", hungerRate),
+        string.format("Thirst drain: %.3f%% per second", thirstRate),
+        string.format("Eating refill: %s", eatingDuration and eatingDuration > 0
+            and string.format("%.3f%% per second (duration %.1fs)",
+                MAX_VALUE / eatingDuration, eatingDuration) or "default rate"),
+        string.format("Drinking refill: %s", drinkingDuration and drinkingDuration > 0
+            and string.format("%.3f%% per second (duration %.1fs)",
+                MAX_VALUE / drinkingDuration, drinkingDuration) or "default rate"),
+        "",
+        "Active auras",
+    }
 
-    local isEating, isDrinking = getConsumptionBuffs()
-    report(string.format("Detected eating=%s, drinking=%s",
-        tostring(isEating), tostring(isDrinking)))
-
-    local getBuff = UnitBuff or UnitAura
-    if getBuff then
-        report("Raw aura results from " .. (UnitBuff and "UnitBuff" or "UnitAura") .. ":")
-        local foundAura = false
-        for index = 1, 40 do
-            local aura = pack(getBuff("player", index))
-            if not aura[1] then
-                break
-            end
-
-            foundAura = true
-            local values = {}
-            for auraIndex = 1, aura.n do
-                if aura[auraIndex] ~= nil then
-                    values[#values + 1] = auraIndex .. "=" .. formatAuraValue(aura[auraIndex])
-                end
-            end
-            report(string.format("%d: %s", index, table.concat(values, " | ")))
-        end
-        if not foundAura then
-            report("No auras returned.")
-        end
-    else
-        report("UnitBuff and UnitAura are unavailable.")
-    end
-
+    local auraCount = 0
     if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
-        report("Raw aura results from C_UnitAuras:")
         for index = 1, 40 do
             local aura = C_UnitAuras.GetAuraDataByIndex("player", index, "HELPFUL")
             if not aura then
                 break
             end
-            report(string.format("%d: %s", index, formatAuraValue(aura)))
+            auraCount = auraCount + 1
+            lines[#lines + 1] = string.format(
+                "%d. %s (spellId=%s, duration=%s, expires=%s, source=%s)",
+                auraCount,
+                tostring(aura.name or "unnamed"),
+                tostring(aura.spellId or "unknown"),
+                tostring(aura.duration or "unknown"),
+                tostring(aura.expirationTime or "unknown"),
+                tostring(aura.sourceUnit or "unknown"))
+        end
+    else
+        local getBuff = UnitBuff or UnitAura
+        if getBuff then
+            for index = 1, 40 do
+                local aura = pack(getBuff("player", index))
+                if not aura[1] then
+                    break
+                end
+                auraCount = auraCount + 1
+                local name = type(aura[1]) == "string" and aura[1] or aura[2]
+                lines[#lines + 1] = string.format("%d. %s | %s",
+                    auraCount, tostring(name or "unknown"), table.concat({
+                        formatAuraValue(aura[1]),
+                        formatAuraValue(aura[2]),
+                        formatAuraValue(aura[3]),
+                        formatAuraValue(aura[10]),
+                    }, " | "))
+            end
         end
     end
+    if auraCount == 0 then
+        lines[#lines + 1] = "No active helpful auras found."
+    end
+
+    if not self.db.depletionEnabled then
+        lines[#lines + 1] = ""
+        lines[#lines + 1] = "Need depletion is disabled."
+    end
+
+    return table.concat(lines, "\n")
 end
 
 local function onEvent(_, event, ...)

@@ -9,6 +9,7 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 - The Well Fed buff halves hunger and thirst depletion.
 - Unmounted movement and combat each double hunger and thirst depletion; the multipliers stack.
 - Settings open from the minimap button or with `/survival` or `/snjh`.
+- `/survival debug` opens a live diagnostics window with auras, need drain rates, and active modifiers.
 - Press Escape to close settings. The status bars can be dragged to reposition them.
 - Settings and survival values are saved between sessions.
 

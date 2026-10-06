@@ -103,6 +103,63 @@ function addon:CreateUI()
     self.settingsFrame = panel
     table.insert(UISpecialFrames, panel:GetName())
 
+    local debugPanel = CreateFrame("Frame", "SurvivalNotJustForHuntersDebug", UIParent, "BackdropTemplate")
+    debugPanel:SetSize(560, 460)
+    debugPanel:SetPoint("CENTER")
+    debugPanel:SetFrameStrata("DIALOG")
+    debugPanel:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+        tile = true,
+        tileSize = 32,
+        edgeSize = 32,
+        insets = { left = 11, right = 12, top = 12, bottom = 11 },
+    })
+    debugPanel:SetMovable(true)
+    debugPanel:EnableMouse(true)
+    debugPanel:RegisterForDrag("LeftButton")
+    debugPanel:SetScript("OnDragStart", debugPanel.StartMoving)
+    debugPanel:SetScript("OnDragStop", debugPanel.StopMovingOrSizing)
+
+    local debugTitle = debugPanel:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+    debugTitle:SetPoint("TOP", debugPanel, "TOP", 0, -18)
+    debugTitle:SetText("Survival Debug")
+
+    local debugScroll = CreateFrame("ScrollFrame", nil, debugPanel, "UIPanelScrollFrameTemplate")
+    debugScroll:SetPoint("TOPLEFT", debugPanel, "TOPLEFT", 18, -48)
+    debugScroll:SetPoint("BOTTOMRIGHT", debugPanel, "BOTTOMRIGHT", -34, 18)
+    local debugContent = CreateFrame("Frame", nil, debugScroll)
+    debugContent:SetSize(490, 1)
+    debugScroll:SetScrollChild(debugContent)
+
+    local debugText = debugContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    debugText:SetPoint("TOPLEFT", debugContent, "TOPLEFT", 0, 0)
+    debugText:SetWidth(480)
+    debugText:SetJustifyH("LEFT")
+    debugText:SetJustifyV("TOP")
+    debugText:SetWordWrap(true)
+
+    debugPanel:SetScript("OnUpdate", function(frame, elapsed)
+        if not frame:IsShown() then
+            return
+        end
+        frame.refreshElapsed = (frame.refreshElapsed or 0) + elapsed
+        if frame.refreshElapsed < 1 then
+            return
+        end
+        frame.refreshElapsed = 0
+        debugText:SetText(self:GetDebugText())
+        debugContent:SetHeight(math.max(debugText:GetStringHeight(), 1))
+    end)
+
+    local debugCloseButton = CreateFrame("Button", nil, debugPanel, "UIPanelCloseButton")
+    debugCloseButton:SetPoint("TOPRIGHT", debugPanel, "TOPRIGHT", -5, -5)
+    debugCloseButton:SetScript("OnClick", function() debugPanel:Hide() end)
+
+    debugPanel:Hide()
+    self.debugFrame = debugPanel
+    table.insert(UISpecialFrames, debugPanel:GetName())
+
     function self:ToggleSettings()
         if panel:IsShown() then
             panel:Hide()
@@ -111,12 +168,22 @@ function addon:CreateUI()
         end
     end
 
+    function self:ToggleDebug()
+        if debugPanel:IsShown() then
+            debugPanel:Hide()
+        else
+            debugText:SetText(self:GetDebugText())
+            debugContent:SetHeight(math.max(debugText:GetStringHeight(), 1))
+            debugPanel:Show()
+        end
+    end
+
     SLASH_SURVIVALNOTJUSTFORHUNTERS1 = "/survival"
     SLASH_SURVIVALNOTJUSTFORHUNTERS2 = "/snjh"
     SlashCmdList.SURVIVALNOTJUSTFORHUNTERS = function(message)
         local command = string.lower(string.match(message or "", "^%s*(.-)%s*$"))
-        if command == "auras" then
-            self:DebugAuras()
+        if command == "debug" or command == "auras" then
+            self:ToggleDebug()
         else
             self:ToggleSettings()
         end
