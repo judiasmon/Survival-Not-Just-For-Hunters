@@ -20,3 +20,11 @@ directory, then enable the addon from the character selection screen.
 
 The minimap icon can be dragged around the minimap. Use the settings window to
 toggle need depletion or hide the status bars.
+
+## Module layout
+
+- `Survival.lua` initializes saved settings and handles addon lifecycle events.
+- `Auras.lua` detects eating, drinking, and Well Fed auras.
+- `Needs.lua` calculates recovery and depletion rates.
+- `Debug.lua` builds the live diagnostics content.
+- `UI.lua` creates the status bars, settings, minimap button, and debug window.

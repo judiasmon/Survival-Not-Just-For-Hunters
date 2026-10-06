@@ -6,5 +6,11 @@
 ## RequiredDeps:
 ## X-Curse-Project-ID: 1730474
 ## SavedVariables: SurvivalNotJustForHuntersDB
+# Core lifecycle and defaults
 Survival.lua
+# Survival mechanics
+Auras.lua
+Needs.lua
+# Diagnostics and interface
+Debug.lua
 UI.lua
