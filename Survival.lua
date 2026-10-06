@@ -110,6 +110,25 @@ getConsumptionBuffs = function()
     end
 
     local function classifyAura(aura)
+        if aura.spellId or aura.name then
+            if FOOD_SPELL_IDS[aura.spellId] then
+                isEating = true
+            elseif DRINK_SPELL_IDS[aura.spellId] then
+                isDrinking = true
+            end
+
+            classifySpellName(aura.spellId)
+            local auraName = type(aura.name) == "string" and string.lower(aura.name) or ""
+            isEating = isEating or auraName:find("food", 1, true) ~= nil
+                or auraName:find("eat", 1, true) ~= nil
+            isDrinking = isDrinking or auraName:find("drink", 1, true) ~= nil
+
+            if aura.spellId == CANNIBALIZE_SPELL_ID then
+                isEating = true
+            end
+            return
+        end
+
         local name, icon, spellID
         local stringValues = {}
         for auraIndex = 1, aura.n do
@@ -192,6 +211,14 @@ getConsumptionBuffs = function()
             end
             local aura = pack(GetPlayerBuffName and GetPlayerBuffName(buffIndex),
                 GetPlayerBuffTexture(buffIndex), GetPlayerBuffID and GetPlayerBuffID(buffIndex))
+            classifyAura(aura)
+        end
+    elseif C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+        for index = 1, 40 do
+            local aura = C_UnitAuras.GetAuraDataByIndex("player", index, "HELPFUL")
+            if not aura then
+                break
+            end
             classifyAura(aura)
         end
     end
