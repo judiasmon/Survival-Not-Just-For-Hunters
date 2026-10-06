@@ -3,6 +3,23 @@ local addonName, addon = ...
 local MAX_VALUE = 100
 local UPDATE_INTERVAL = 1
 local CANNIBALIZE_SPELL_ID = 20577
+local FOOD_SPELL_IDS = {
+    [433] = true,
+    [434] = true,
+    [435] = true,
+    [1127] = true,
+    [1129] = true,
+    [1131] = true,
+}
+local DRINK_SPELL_IDS = {
+    [430] = true,
+    [431] = true,
+    [432] = true,
+    [1133] = true,
+    [1135] = true,
+    [1137] = true,
+    [10250] = true,
+}
 local getConsumptionBuffs
 
 local function pack(...)
@@ -75,51 +92,87 @@ getConsumptionBuffs = function()
         end
     end
 
-    local getBuff = UnitBuff or UnitAura
-    if not getBuff then
-        return isEating, isDrinking
-    end
-
-    for index = 1, 40 do
-        local aura = pack(getBuff("player", index))
-        if not aura[1] then
-            break
-        end
-
-        local name, icon
-        if type(aura[1]) == "string" and aura[1]:find("^Interface") then
-            icon = aura[1]
-        else
-            name, icon = aura[1], aura[2]
-        end
-
-        local buffName = type(name) == "string" and string.lower(name) or ""
-        local buffIcon = type(icon) == "string" and string.lower(icon) or ""
-        local isFoodSpell, isDrinkSpell = false, false
+    local function classifyAura(aura)
+        local name, icon, spellID
+        local stringValues = {}
         for auraIndex = 1, aura.n do
             local value = aura[auraIndex]
-            if value == 430 then
-                isFoodSpell = true
-            elseif value == 431 then
-                isDrinkSpell = true
-            elseif type(value) == "string" and not value:find("^Interface") then
-                local candidate = string.lower(value)
-                if candidate:find("food", 1, true) or candidate:find("eating", 1, true) then
-                    buffName = candidate
-                elseif candidate:find("drink", 1, true) then
-                    buffName = candidate
+            if type(value) == "number" then
+                if FOOD_SPELL_IDS[value] then
+                    isEating = true
+                elseif DRINK_SPELL_IDS[value] then
+                    isDrinking = true
+                end
+                spellID = value
+            elseif type(value) == "string" then
+                if value:find("^Interface") then
+                    icon = icon or value
+                else
+                    stringValues[#stringValues + 1] = value
                 end
             end
         end
 
-        isEating = isEating or isFoodSpell
-            or buffName:find("food", 1, true) ~= nil
-            or buffName:find("eating", 1, true) ~= nil
-            or buffIcon:find("inv_misc_food_15", 1, true) ~= nil
-        isDrinking = isDrinking or isDrinkSpell
-            or buffName:find("drinking", 1, true) ~= nil
-            or buffName:find("drink", 1, true) ~= nil
-            or buffIcon:find("inv_drink_05", 1, true) ~= nil
+        if stringValues[1] and stringValues[1]:find("^Interface") then
+            icon = icon or stringValues[1]
+        else
+            name = stringValues[1]
+            icon = icon or stringValues[2]
+        end
+
+        if not icon then
+            for _, value in ipairs(stringValues) do
+                if value:find("^Interface") then
+                    icon = value
+                    break
+                end
+            end
+        end
+
+        local buffName = string.lower(name or "")
+        local buffIcon = string.lower(icon or "")
+        local eatingName = buffName:find("food", 1, true)
+            or buffName:find("eat", 1, true)
+        local drinkingName = buffName:find("drink", 1, true)
+        local eatingIcon = buffIcon:find("inv_misc_food", 1, true)
+        local drinkingIcon = buffIcon:find("inv_drink", 1, true)
+
+        if not eatingName and not drinkingName and not eatingIcon and not drinkingIcon then
+            for _, value in ipairs(stringValues) do
+                local candidate = string.lower(value)
+                eatingName = eatingName or candidate:find("food", 1, true)
+                    or candidate:find("eating", 1, true)
+                drinkingName = drinkingName or candidate:find("drink", 1, true)
+            end
+        end
+
+        isEating = isEating or eatingName ~= nil or eatingIcon ~= nil
+        isDrinking = isDrinking or drinkingName ~= nil or drinkingIcon ~= nil
+
+        if spellID == CANNIBALIZE_SPELL_ID then
+            isEating = true
+        end
+    end
+
+    local getBuff = UnitBuff or UnitAura
+    if getBuff then
+        for index = 1, 40 do
+            local aura = pack(getBuff("player", index))
+            if not aura[1] then
+                break
+            end
+            classifyAura(aura)
+        end
+    elseif GetPlayerBuff and GetPlayerBuffTexture then
+        for index = 0, 31 do
+            local buffIndex = GetPlayerBuff(index, "HELPFUL")
+            if not buffIndex or buffIndex < 0 then
+                break
+            end
+            local aura = pack(GetPlayerBuffName and GetPlayerBuffName(buffIndex),
+                GetPlayerBuffTexture(buffIndex), GetPlayerBuffID and GetPlayerBuffID(buffIndex))
+            classifyAura(aura)
+        end
     end
 
     return isEating, isDrinking
