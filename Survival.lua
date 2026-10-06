@@ -93,6 +93,22 @@ getConsumptionBuffs = function()
         end
     end
 
+    local function classifySpellName(spellID)
+        if not spellID or not GetSpellInfo then
+            return
+        end
+
+        local spellName = GetSpellInfo(spellID)
+        if type(spellName) ~= "string" then
+            return
+        end
+
+        spellName = string.lower(spellName)
+        isEating = isEating or spellName:find("food", 1, true) ~= nil
+            or spellName:find("eating", 1, true) ~= nil
+        isDrinking = isDrinking or spellName:find("drink", 1, true) ~= nil
+    end
+
     local function classifyAura(aura)
         local name, icon, spellID
         local stringValues = {}
@@ -113,6 +129,10 @@ getConsumptionBuffs = function()
                 end
             end
         end
+
+        classifySpellName(aura[9])
+        classifySpellName(aura[10])
+        classifySpellName(spellID)
 
         if stringValues[1] and stringValues[1]:find("^Interface") then
             icon = icon or stringValues[1]
