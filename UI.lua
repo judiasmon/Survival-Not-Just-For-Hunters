@@ -126,7 +126,7 @@ function addon:CreateUI()
     minimapButton:RegisterForDrag("LeftButton")
 
     local icon = minimapButton:CreateTexture(nil, "BACKGROUND")
-    icon:SetTexture("Interface\\Icons\\Spell_Fire_Fire")
+    icon:SetTexture(7808144)
     icon:SetSize(20, 20)
     icon:SetPoint("CENTER")
     minimapButton.icon = icon
