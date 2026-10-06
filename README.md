@@ -5,13 +5,51 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 ## Features
 
 - Hunger and thirst gradually decrease over time.
+- Fatigue takes about eight hours to deplete at normal hunger and thirst, drains faster when either need is below 25%, and recovers fully in about five minutes in WoW resting areas.
 - Eating or drinking refills its meter at 100% divided by the buff duration, capped at 100%.
 - The Well Fed buff halves hunger and thirst depletion.
 - Unmounted movement and combat each double hunger and thirst depletion; the multipliers stack.
+- Mapped cold zones increase hunger depletion, while hot zones increase thirst depletion. Searing Gorge, Burning Steppes, and most of Stranglethorn Vale are very hot; Booty Bay is hot. The temperature gauge runs from cold on the left through neutral to hot on the right; indoor areas are neutral.
+- Hunger, thirst, or fatigue reaching 10%, 5%, and 0% plays the mapped race- and gender-specific low-energy sound when available. At zero on any of those meters, a race- and gender-specific cry sound plays immediately and every 10 seconds until all recover above zero. Unmapped low-energy voices are reported in `/survival debug`.
 - Settings open from the minimap button or with `/survival` or `/snjh`.
+- Settings include a Statistics tab tracking eating/drinking sessions, resting time, time below 25% hunger or thirst, and the most recent eating/drinking times.
 - `/survival debug` opens a live diagnostics window with auras, need drain rates, and active modifiers.
+- The addon pauses survival updates and hides its bars in dungeons, raids, battlegrounds, and arenas by default; this can be changed in settings.
 - Press Escape to close settings. The status bars can be dragged to reposition them.
 - Settings and survival values are saved between sessions.
+
+## Temperature map
+
+Temperature is checked from the current zone and subzone. Dun Morogh and
+Winterspring are very cold; Alterac Mountains, Hillsbrad Foothills, both
+Plaguelands, and The Hinterlands are cold. The Barrens, Badlands, Blasted Lands,
+Un'Goro Crater, and Silithus are hot;
+Searing Gorge, Burning Steppes, and most of Stranglethorn Vale are very hot;
+Tanaris is very hot. Booty Bay, Ironforge, Everlook, Ratchet, The Crossroads,
+Gadgetzan, Steamwheedle Port, and Caverns of Time have specific subzone
+overrides. Indoor areas are neutral. Unmapped locations default to neutral.
+
+Each temperature level increases the relevant drain by 20%: cold affects
+hunger, while heat affects thirst. The gauge runs from very cold at the left
+through neutral in the center to very hot at the right.
+
+## Statistics
+
+The Statistics settings tab saves food and drink session counts, time spent
+resting, time spent below 25% hunger or thirst, and the timestamps of the
+latest eating and drinking sessions. Time totals are accumulated during active
+play only and pause in disabled instances.
+
+## Fatigue
+
+Fatigue depletes over about eight hours at normal hunger and thirst. If either
+need drops below 25%, fatigue drains faster, up to four times the normal rate
+when a need reaches zero. It recovers fully in about five minutes in a WoW
+resting area.
+
+Fatigue recovery currently uses WoW's resting-area API. General proximity to a
+cooking fire is not exposed as a player buff, so campsite recovery is not
+included yet.
 
 ## Install
 
@@ -25,6 +63,11 @@ toggle need depletion or hide the status bars.
 
 - `Survival.lua` initializes saved settings and handles addon lifecycle events.
 - `Auras.lua` detects eating, drinking, and Well Fed auras.
-- `Needs.lua` calculates recovery and depletion rates.
+- `Temperature.lua` maps selected zones and subzones to a temperature level and treats indoor areas as neutral.
+- `Needs.lua` calculates recovery and depletion rates, including temperature effects.
+- `Fatigue.lua` manages fatigue depletion and resting-area recovery.
+- `Feedback.lua` plays race- and gender-specific low-need and cry sounds.
+- `Statistics.lua` tracks saved survival activity statistics.
 - `Debug.lua` builds the live diagnostics content.
-- `UI.lua` creates the status bars, settings, minimap button, and debug window.
+- `Windows.lua` creates settings and diagnostics windows and registers slash commands.
+- `UI.lua` creates the status bars and minimap button.
