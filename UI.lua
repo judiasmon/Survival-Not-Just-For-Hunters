@@ -86,17 +86,15 @@ function addon:CreateUI()
     description:SetPoint("TOPLEFT", panel, "TOPLEFT", 24, -56)
     description:SetWidth(248)
     description:SetJustifyH("LEFT")
-    description:SetText("Hunger and thirst decrease over time. Use food and drink from your bags to restore them.")
+    description:SetText("Hunger and thirst decrease over time. Eat and drink to restore them.")
 
     local depletionCheckbox = createCheckbox(panel, "Enable hunger and thirst depletion", -105,
         function(value) self.db.depletionEnabled = value end)
     local barsCheckbox = createCheckbox(panel, "Show survival bars", -137,
         function(value) self.db.barsShown = value end)
 
-    local closeButton = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
-    closeButton:SetSize(90, 24)
-    closeButton:SetPoint("BOTTOM", panel, "BOTTOM", 0, 18)
-    closeButton:SetText(CLOSE or "Close")
+    local closeButton = CreateFrame("Button", nil, panel, "UIPanelCloseButton")
+    closeButton:SetPoint("TOPRIGHT", panel, "TOPRIGHT", -5, -5)
     closeButton:SetScript("OnClick", function() panel:Hide() end)
 
     depletionCheckbox:SetChecked(self.db.depletionEnabled)
@@ -121,17 +119,45 @@ function addon:CreateUI()
 
     local minimapButton = CreateFrame("Button", "SurvivalNotJustForHuntersMinimapButton", Minimap)
     minimapButton:SetSize(32, 32)
+    minimapButton:SetFrameStrata("MEDIUM")
     minimapButton:SetFrameLevel(Minimap:GetFrameLevel() + 5)
-    minimapButton:SetPoint("TOPLEFT", Minimap, "TOPLEFT", 0, 0)
     minimapButton:EnableMouse(true)
-    minimapButton:RegisterForClicks("LeftButtonUp")
-    minimapButton:SetHighlightTexture("Interface\\Minimap\\UI-Minimap-ZoomButton-Highlight")
+    minimapButton:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    minimapButton:RegisterForDrag("LeftButton")
 
     local icon = minimapButton:CreateTexture(nil, "BACKGROUND")
-    icon:SetTexture("Interface\\Icons\\INV_Misc_Food_15")
+    icon:SetTexture("Interface\\Icons\\INV_Misc_Bonfire_01")
     icon:SetSize(20, 20)
     icon:SetPoint("CENTER")
+    minimapButton.icon = icon
+
+    local border = minimapButton:CreateTexture(nil, "OVERLAY")
+    border:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    border:SetSize(54, 54)
+    border:SetPoint("TOPLEFT", minimapButton, "TOPLEFT", 0, 0)
+
+    local function positionMinimapButton()
+        local angle = math.rad(self.db.minimapAngle or 220)
+        local radius = (Minimap:GetWidth() / 2) + 4
+        minimapButton:ClearAllPoints()
+        minimapButton:SetPoint("CENTER", Minimap, "CENTER",
+            math.cos(angle) * radius, math.sin(angle) * radius)
+    end
+
     minimapButton:SetScript("OnClick", function() self:ToggleSettings() end)
+    minimapButton:SetScript("OnDragStart", function(button)
+        button:SetScript("OnUpdate", function()
+            local x, y = GetCursorPosition()
+            local scale = UIParent:GetEffectiveScale()
+            x = x / scale - Minimap:GetLeft() - Minimap:GetWidth() / 2
+            y = y / scale - Minimap:GetBottom() - Minimap:GetHeight() / 2
+            self.db.minimapAngle = math.deg(math.atan2(y, x))
+            positionMinimapButton()
+        end)
+    end)
+    minimapButton:SetScript("OnDragStop", function(button)
+        button:SetScript("OnUpdate", nil)
+    end)
     minimapButton:SetScript("OnEnter", function(button)
         GameTooltip:SetOwner(button, "ANCHOR_LEFT")
         GameTooltip:SetText("Survival Settings")
@@ -139,6 +165,7 @@ function addon:CreateUI()
         GameTooltip:Show()
     end)
     minimapButton:SetScript("OnLeave", function() GameTooltip:Hide() end)
+    positionMinimapButton()
     self.minimapButton = minimapButton
 end
 

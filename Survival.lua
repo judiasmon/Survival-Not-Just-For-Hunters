@@ -2,6 +2,11 @@ local addonName, addon = ...
 
 local MAX_VALUE = 100
 local UPDATE_INTERVAL = 1
+local getConsumptionBuffs
+
+local function pack(...)
+    return { n = select("#", ...), ... }
+end
 
 addon.defaults = {
     hunger = MAX_VALUE,
@@ -9,10 +14,13 @@ addon.defaults = {
     lastUpdate = 0,
     hungerDrain = 0.012,
     thirstDrain = 0.018,
+    hungerRestore = 1,
+    thirstRestore = 1.5,
     depletionEnabled = true,
     barsShown = true,
     barX = 0,
     barY = -220,
+    minimapAngle = 220,
 }
 
 local function copyDefaults()
@@ -31,12 +39,18 @@ local function copyDefaults()
 end
 
 local function updateNeeds(elapsed)
-    if not addon.db.depletionEnabled then
-        return
+    if addon.db.depletionEnabled then
+        addon.db.hunger = math.max(0, addon.db.hunger - addon.db.hungerDrain * elapsed)
+        addon.db.thirst = math.max(0, addon.db.thirst - addon.db.thirstDrain * elapsed)
     end
 
-    addon.db.hunger = math.max(0, addon.db.hunger - addon.db.hungerDrain * elapsed)
-    addon.db.thirst = math.max(0, addon.db.thirst - addon.db.thirstDrain * elapsed)
+    local isEating, isDrinking = getConsumptionBuffs()
+    if isEating then
+        addon.db.hunger = math.min(MAX_VALUE, addon.db.hunger + addon.db.hungerRestore * elapsed)
+    end
+    if isDrinking then
+        addon.db.thirst = math.min(MAX_VALUE, addon.db.thirst + addon.db.thirstRestore * elapsed)
+    end
 end
 
 function addon:RestoreNeeds(need, amount)
@@ -49,87 +63,56 @@ function addon:RestoreNeeds(need, amount)
     self:UpdateDisplay()
 end
 
-local function classifyConsumable(itemLink)
-    if not itemLink then
-        return nil
+getConsumptionBuffs = function()
+    local isEating, isDrinking = false, false
+    local getBuff = UnitBuff or UnitAura
+    if not getBuff then
+        return isEating, isDrinking
     end
 
-    local itemName, itemType, itemSubType = GetItemInfo(itemLink)
-    local classID, subclassID
-    if GetItemInfoInstant then
-        local itemData = { GetItemInfoInstant(itemLink) }
-        classID, subclassID = itemData[6], itemData[7]
-    end
-    local foodDrinkSubType = GetItemSubClassInfo and GetItemSubClassInfo(0, 5)
-    local isFoodOrDrink = (classID == 0 and subclassID == 5)
-        or (foodDrinkSubType and itemSubType == foodDrinkSubType)
+    for index = 1, 40 do
+        local aura = pack(getBuff("player", index))
+        if not aura[1] then
+            break
+        end
 
-    if not isFoodOrDrink then
-        local consumableType = GetItemClassInfo and GetItemClassInfo(0) or "Consumable"
-        local subTypeName = string.lower(itemSubType or "")
-        isFoodOrDrink = itemType == consumableType
-            and (subTypeName:find("food", 1, true) or subTypeName:find("drink", 1, true))
-    end
-    if not isFoodOrDrink then
-        return nil
-    end
+        local name, icon
+        if type(aura[1]) == "string" and aura[1]:find("^Interface") then
+            icon = aura[1]
+        else
+            name, icon = aura[1], aura[2]
+        end
 
-    local itemSpellName = GetItemSpell and GetItemSpell(itemLink)
-    local drinkSpellName = GetSpellInfo and GetSpellInfo(430)
-    local foodSpellName = GetSpellInfo and GetSpellInfo(433)
-    if itemSpellName and drinkSpellName and itemSpellName == drinkSpellName then
-        return "thirst"
-    elseif itemSpellName and foodSpellName and itemSpellName == foodSpellName then
-        return "hunger"
-    end
+        local buffName = type(name) == "string" and string.lower(name) or ""
+        local buffIcon = type(icon) == "string" and string.lower(icon) or ""
+        local isFoodSpell, isDrinkSpell = false, false
+        for auraIndex = 1, aura.n do
+            local value = aura[auraIndex]
+            if value == 430 then
+                isFoodSpell = true
+            elseif value == 431 then
+                isDrinkSpell = true
+            elseif type(value) == "string" and not value:find("^Interface") then
+                local candidate = string.lower(value)
+                if candidate:find("food", 1, true) or candidate:find("eating", 1, true) then
+                    buffName = candidate
+                elseif candidate:find("drink", 1, true) then
+                    buffName = candidate
+                end
+            end
+        end
 
-    local name = string.lower(itemName or "")
-    local isDrink = name:find("drink", 1, true)
-        or name:find("water", 1, true)
-        or name:find("beverage", 1, true)
-        or name:find("juice", 1, true)
-    local isFood = name:find("bread", 1, true)
-        or name:find("meat", 1, true)
-        or name:find("fish", 1, true)
-        or name:find("fruit", 1, true)
-        or name:find("cheese", 1, true)
-        or name:find("steak", 1, true)
-        or name:find("roast", 1, true)
-        or name:find("sausage", 1, true)
-        or name:find("egg", 1, true)
-        or name:find("jerky", 1, true)
-        or name:find("dumpling", 1, true)
-        or name:find("biscuit", 1, true)
-        or name:find("pie", 1, true)
-        or name:find("stew", 1, true)
-        or name:find("cake", 1, true)
-        or name:find("berry", 1, true)
-
-    if isDrink and not isFood then
-        return "thirst"
-    elseif isFood and not isDrink then
-        return "hunger"
+        isEating = isEating or isFoodSpell
+            or buffName:find("food", 1, true) ~= nil
+            or buffName:find("eating", 1, true) ~= nil
+            or buffIcon:find("inv_misc_food_15", 1, true) ~= nil
+        isDrinking = isDrinking or isDrinkSpell
+            or buffName:find("drinking", 1, true) ~= nil
+            or buffName:find("drink", 1, true) ~= nil
+            or buffIcon:find("inv_drink_05", 1, true) ~= nil
     end
 
-    -- Some locales and item names do not identify which need is restored.
-    return "both"
-end
-
-local function getContainerItemLink(bag, slot)
-    if C_Container and C_Container.GetContainerItemLink then
-        return C_Container.GetContainerItemLink(bag, slot)
-    end
-    if GetContainerItemLink then
-        return GetContainerItemLink(bag, slot)
-    end
-end
-
-local function onUseContainerItem(bag, slot)
-    local itemLink = getContainerItemLink(bag, slot)
-    local need = classifyConsumable(itemLink)
-    if need then
-        addon:RestoreNeeds(need, 25)
-    end
+    return isEating, isDrinking
 end
 
 local function onEvent(_, event, ...)
@@ -162,11 +145,3 @@ ticker:SetScript("OnUpdate", function(self, elapsed)
     self.elapsed = 0
     addon:UpdateDisplay()
 end)
-
-if hooksecurefunc then
-    if C_Container and C_Container.UseContainerItem then
-        hooksecurefunc(C_Container, "UseContainerItem", onUseContainerItem)
-    elseif UseContainerItem then
-        hooksecurefunc("UseContainerItem", onUseContainerItem)
-    end
-end
