@@ -1,5 +1,15 @@
 local addonName, addon = ...
 
+local difficultyMultipliers = {
+    Casual = 0.5,
+    Normal = 1,
+    Hardcore = 2,
+}
+
+function addon:GetDifficultyMultiplier()
+    return difficultyMultipliers[self.db.needDifficulty] or difficultyMultipliers.Normal
+end
+
 function addon:GetDrainModifiers(state)
     state = state or self:GetConsumptionState()
     local temperature = self:GetTemperatureState()
@@ -23,6 +33,7 @@ function addon:GetDrainModifiers(state)
         combat = combat,
         wellFed = wellFed,
         total = movement * combat * wellFed,
+        difficulty = self:GetDifficultyMultiplier(),
         temperature = temperature.value,
         temperatureHunger = temperatureHunger,
         temperatureThirst = temperatureThirst,
@@ -31,7 +42,8 @@ end
 
 function addon:GetDrainRates(state)
     local modifiers = self:GetDrainModifiers(state)
-    local multiplier = self.db.depletionEnabled and modifiers.total or 0
+    local multiplier = self.db.depletionEnabled
+        and modifiers.total * modifiers.difficulty or 0
     return self.db.hungerDrain * multiplier * modifiers.temperatureHunger,
         self.db.thirstDrain * multiplier * modifiers.temperatureThirst,
         modifiers

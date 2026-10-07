@@ -52,6 +52,8 @@ function addon:GetDebugText()
         string.format("Unmounted movement: x%.2f", modifiers.movement),
         string.format("Combat: x%.2f", modifiers.combat),
         string.format("Combined: x%.2f", modifiers.total),
+        string.format("Difficulty (%s): x%.2f",
+            self.db.needDifficulty, modifiers.difficulty),
         string.format("Temperature hunger: x%.2f", modifiers.temperatureHunger),
         string.format("Temperature thirst: x%.2f", modifiers.temperatureThirst),
         string.format("Temperature effect per level: +%.0f%% drain",
