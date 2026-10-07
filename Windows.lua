@@ -83,7 +83,7 @@ function addon:CreateSettingsWindow()
     description:SetText("Hunger and thirst decrease over time. Eat and drink to restore them.")
 
     local depletionCheckbox = createCheckbox(settingsContent,
-        "Enable hunger and thirst depletion", -42,
+        "Enable needs depletion", -42,
         function(value) self.db.depletionEnabled = value end)
     local barsCheckbox = createCheckbox(settingsContent, "Show survival bars", -74,
         function(value) self.db.barsShown = value end)
