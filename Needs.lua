@@ -15,7 +15,8 @@ function addon:GetDrainModifiers(state)
     local temperature = self:GetTemperatureState()
 
     local movement = 1
-    if GetUnitSpeed and GetUnitSpeed("player") > 0
+    local speed = GetUnitSpeed and GetUnitSpeed("player")
+    if not self:IsSecretValue(speed) and type(speed) == "number" and speed > 0
         and not (IsMounted and IsMounted()) then
         movement = self.db.movementDrainMultiplier
     end

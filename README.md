@@ -10,7 +10,7 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 - Logging out in a WoW resting area restores fatigue to full when logging back in.
 - Eating or drinking refills its meter at 100% divided by the buff duration, capped at 100%.
 - The Well Fed buff halves hunger and thirst depletion.
-- Unmounted movement and combat each double hunger and thirst depletion; the multipliers stack.
+- Unmounted movement and combat each double hunger and thirst depletion, but do not stack because movement cannot be detected reliably during combat.
 - Mapped cold zones increase hunger depletion, while warm zones increase thirst depletion. Searing Gorge, Burning Steppes, and most of Stranglethorn Vale are hot; Booty Bay is warm. The temperature gauge runs from cold on the left through neutral to hot on the right; indoor areas are neutral.
 - Hunger, thirst, or fatigue reaching 10%, 5%, and 0% plays the mapped race- and gender-specific low-energy sound when available. At zero on any of those meters, a race- and gender-specific cry sound plays immediately and every 10 seconds until all recover above zero. Unmapped low-energy voices are reported in `/survival debug`.
 - Settings open from the minimap button or with `/survival` or `/snjh`.

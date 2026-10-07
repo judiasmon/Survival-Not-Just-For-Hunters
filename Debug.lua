@@ -14,7 +14,9 @@ end
 function addon:GetDebugText()
     local state = self:GetConsumptionState()
     local hungerRate, thirstRate, modifiers = self:GetDrainRates(state)
-    local moving = GetUnitSpeed and GetUnitSpeed("player") > 0 or false
+    local speed = GetUnitSpeed and GetUnitSpeed("player")
+    local moving = not self:IsSecretValue(speed)
+        and type(speed) == "number" and speed > 0 or false
     local mounted = IsMounted and IsMounted() or false
     local inCombat = UnitAffectingCombat and UnitAffectingCombat("player") or false
     local temperature = self:GetTemperatureState()

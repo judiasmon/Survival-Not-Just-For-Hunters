@@ -33,6 +33,10 @@ addon.defaults = {
     minimapAngle = 220,
 }
 
+function addon:IsSecretValue(value)
+    return issecretvalue and issecretvalue(value) or false
+end
+
 function addon:InitializeDatabase()
     local database = SurvivalNotJustForHuntersDB
     if type(database) ~= "table" then
