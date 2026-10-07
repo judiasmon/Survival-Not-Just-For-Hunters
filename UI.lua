@@ -38,6 +38,7 @@ local function createTemperatureBar(parent)
     neutralMarker:SetColorTexture(1, 1, 1, 0.9)
     neutralMarker:SetSize(2, 16)
     neutralMarker:SetPoint("CENTER", bar, "CENTER")
+    bar.neutralMarker = neutralMarker
 
     local marker = bar:CreateTexture(nil, "OVERLAY")
     marker:SetColorTexture(0.2, 0.5, 0.95)
@@ -172,6 +173,11 @@ function addon:UpdateDisplay()
 
     local temperature = self:GetTemperatureState()
     local position = (temperature.value + 2) / 4
+    if temperature.value == 0 then
+        self.temperatureBar.neutralMarker:Show()
+    else
+        self.temperatureBar.neutralMarker:Hide()
+    end
     self.temperatureMarker:ClearAllPoints()
     self.temperatureMarker:SetPoint("CENTER", self.temperatureBar, "LEFT",
         2 + position * (self.temperatureBar:GetWidth() - 4), 0)
