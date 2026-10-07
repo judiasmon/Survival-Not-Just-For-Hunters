@@ -54,7 +54,7 @@ end
 function addon:CreateSettingsWindow()
     local panel = CreateFrame("Frame", "SurvivalNotJustForHuntersSettings",
         UIParent, "BackdropTemplate")
-    configureWindow(panel, 360, 264)
+    configureWindow(panel, 360, 300)
     createTitle(panel, "Survival Settings", -22)
 
     local settingsTab = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
@@ -90,6 +90,49 @@ function addon:CreateSettingsWindow()
     local instancesCheckbox = createCheckbox(settingsContent,
         "Disable in dungeons, raids, and battlegrounds", -106,
         function(value) self.db.disableInInstances = value end)
+
+    local difficultyLabel = settingsContent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    difficultyLabel:SetPoint("TOPLEFT", settingsContent, "TOPLEFT", 14, -137)
+
+    local difficultySlider = CreateFrame("Slider", "SurvivalNeedDifficultySlider",
+        settingsContent, "OptionsSliderTemplate")
+    difficultySlider:SetPoint("TOPLEFT", settingsContent, "TOPLEFT", 20, -157)
+    difficultySlider:SetSize(260, 18)
+    difficultySlider:SetMinMaxValues(1, 3)
+    difficultySlider:SetValueStep(1)
+
+    local difficultyLabels = {
+        { name = "Casual", value = 1 },
+        { name = "Normal", value = 2 },
+        { name = "Hardcore", value = 3 },
+    }
+    for _, option in ipairs(difficultyLabels) do
+        local label = settingsContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        label:SetPoint("TOP", difficultySlider, "BOTTOM",
+            (option.value - 2) * (difficultySlider:GetWidth() / 2), -4)
+        label:SetText(option.name)
+    end
+
+    local difficultyValues = { "Casual", "Normal", "Hardcore" }
+    local difficultyPositions = { Casual = 1, Normal = 2, Hardcore = 3 }
+    local function updateDifficultyLabel()
+        local selectedDifficulty = self.db.needDifficulty
+        local multiplier = self:GetDifficultyMultiplier()
+        difficultyLabel:SetText(string.format("Need depletion: %s (%.0f%%)",
+            selectedDifficulty, multiplier * 100))
+    end
+    difficultySlider:SetValue(difficultyPositions[self.db.needDifficulty] or 2)
+    difficultySlider:SetScript("OnValueChanged", function(_, value)
+        local index = math.floor(value + 0.5)
+        if value ~= index then
+            difficultySlider:SetValue(index)
+            return
+        end
+        self.db.needDifficulty = difficultyValues[index]
+        updateDifficultyLabel()
+    end)
+    updateDifficultyLabel()
+    self.difficultySlider = difficultySlider
 
     local statisticsLines = {}
     for index = 1, 7 do

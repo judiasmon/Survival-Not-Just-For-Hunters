@@ -15,14 +15,15 @@ addon.defaults = {
     statsTimeThirsty = 0,
     statsLastAte = 0,
     statsLastDrank = 0,
-    hungerDrain = 0.012,
-    thirstDrain = 0.018,
+    hungerDrain = 100 / (180 * 60),
+    thirstDrain = 100 / (150 * 60),
     hungerRestore = 1,
     thirstRestore = 1.5,
     movementDrainMultiplier = 2,
     combatDrainMultiplier = 2,
     wellFedDrainMultiplier = 0.5,
     temperatureDrainPerLevel = 0.2,
+    needDifficulty = "Normal",
     depletionEnabled = true,
     disableInInstances = true,
     barsShown = true,
@@ -38,10 +39,24 @@ function addon:InitializeDatabase()
         SurvivalNotJustForHuntersDB = database
     end
 
+    if database.needDifficulty == nil then
+        if database.hungerDrain == 0.012 then
+            database.hungerDrain = self.defaults.hungerDrain
+        end
+        if database.thirstDrain == 0.018 then
+            database.thirstDrain = self.defaults.thirstDrain
+        end
+    end
+
     for key, value in pairs(self.defaults) do
         if database[key] == nil then
             database[key] = value
         end
+    end
+    if database.needDifficulty ~= "Casual"
+        and database.needDifficulty ~= "Normal"
+        and database.needDifficulty ~= "Hardcore" then
+        database.needDifficulty = "Normal"
     end
     self.db = database
 end

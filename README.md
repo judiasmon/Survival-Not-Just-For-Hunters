@@ -5,6 +5,7 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 ## Features
 
 - Hunger and thirst gradually decrease over time.
+- At Normal difficulty, hunger takes 180 minutes and thirst 150 minutes to deplete from full with no modifiers. The settings slider offers Casual (50%), Normal (100%), and Hardcore (200%) need depletion rates.
 - Fatigue takes about eight hours to deplete at normal hunger and thirst, drains faster when either need is below 25%, and recovers fully in about five minutes in WoW resting areas.
 - Eating or drinking refills its meter at 100% divided by the buff duration, capped at 100%.
 - The Well Fed buff halves hunger and thirst depletion.
