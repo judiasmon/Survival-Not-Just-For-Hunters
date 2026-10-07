@@ -100,6 +100,17 @@ function addon:CreateSettingsWindow()
     difficultySlider:SetSize(260, 18)
     difficultySlider:SetMinMaxValues(1, 3)
     difficultySlider:SetValueStep(1)
+    local sliderName = difficultySlider:GetName()
+    if sliderName then
+        local lowLabel = _G[sliderName .. "Low"]
+        local highLabel = _G[sliderName .. "High"]
+        if lowLabel then
+            lowLabel:Hide()
+        end
+        if highLabel then
+            highLabel:Hide()
+        end
+    end
 
     local difficultyLabels = {
         { name = "Casual", value = 1 },

@@ -8,6 +8,7 @@ addon.defaults = {
     thirst = addon.MAX_VALUE,
     fatigue = addon.MAX_VALUE,
     lastUpdate = 0,
+    fatigueRestedLogout = false,
     statsFoodEaten = 0,
     statsDrinksDrank = 0,
     statsTimeResting = 0,
@@ -90,7 +91,11 @@ local function onEvent(_, event)
         addon:UpdateTemperature()
         addon.instanceState = addon:GetInstanceState()
         local now = time()
-        if addon.db.lastUpdate > 0 and not addon.instanceState.disabled then
+        local restoreFatigueFromRestedLogout = addon.db.fatigueRestedLogout
+        addon.db.fatigueRestedLogout = false
+        if restoreFatigueFromRestedLogout then
+            addon.db.fatigue = addon.MAX_VALUE
+        elseif addon.db.lastUpdate > 0 and not addon.instanceState.disabled then
             local offlineElapsed = math.max(0, now - addon.db.lastUpdate)
             addon:UpdateNeeds(offlineElapsed)
             addon:UpdateFatigue(offlineElapsed, false)
@@ -113,6 +118,7 @@ local function onEvent(_, event)
         end
     elseif event == "PLAYER_LOGOUT" and addon.db then
         addon.db.lastUpdate = time()
+        addon.db.fatigueRestedLogout = IsResting and IsResting() or false
     end
 end
 
