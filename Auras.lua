@@ -25,7 +25,24 @@ end
 
 local function getAuraRecords()
     local auras = {}
-    if C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
+    local getBuff = UnitBuff or UnitAura
+    if getBuff then
+        for index = 1, 40 do
+            local values = pack(getBuff("player", index))
+            if not values[1] then
+                break
+            end
+            auras[#auras + 1] = {
+                raw = values,
+                name = type(values[1]) == "string" and values[1] or nil,
+                icon = values[3],
+                duration = values[6],
+                expirationTime = values[7],
+                sourceUnit = values[8],
+                spellId = values[10],
+            }
+        end
+    elseif C_UnitAuras and C_UnitAuras.GetAuraDataByIndex then
         for index = 1, 40 do
             local aura = C_UnitAuras.GetAuraDataByIndex("player", index, "HELPFUL")
             if not aura then
@@ -33,36 +50,17 @@ local function getAuraRecords()
             end
             auras[#auras + 1] = aura
         end
-    else
-        local getBuff = UnitBuff or UnitAura
-        if getBuff then
-            for index = 1, 40 do
-                local values = pack(getBuff("player", index))
-                if not values[1] then
-                    break
-                end
-                auras[#auras + 1] = {
-                    raw = values,
-                    name = type(values[1]) == "string" and values[1] or nil,
-                    icon = values[3],
-                    duration = values[6],
-                    expirationTime = values[7],
-                    sourceUnit = values[8],
-                    spellId = values[10],
-                }
+    elseif GetPlayerBuff and GetPlayerBuffTexture then
+        for index = 0, 31 do
+            local buffIndex = GetPlayerBuff(index, "HELPFUL")
+            if not buffIndex or buffIndex < 0 then
+                break
             end
-        elseif GetPlayerBuff and GetPlayerBuffTexture then
-            for index = 0, 31 do
-                local buffIndex = GetPlayerBuff(index, "HELPFUL")
-                if not buffIndex or buffIndex < 0 then
-                    break
-                end
-                auras[#auras + 1] = {
-                    name = GetPlayerBuffName and GetPlayerBuffName(buffIndex),
-                    icon = GetPlayerBuffTexture(buffIndex),
-                    spellId = GetPlayerBuffID and GetPlayerBuffID(buffIndex),
-                }
-            end
+            auras[#auras + 1] = {
+                name = GetPlayerBuffName and GetPlayerBuffName(buffIndex),
+                icon = GetPlayerBuffTexture(buffIndex),
+                spellId = GetPlayerBuffID and GetPlayerBuffID(buffIndex),
+            }
         end
     end
     return auras
@@ -120,7 +118,35 @@ local function classifyAura(aura)
     return isEating, isDrinking, isWellFed
 end
 
+function addon:ShouldSkipAuraQueries()
+    if C_Secrets and type(C_Secrets.ShouldAurasBeSecret) == "function"
+        and C_Secrets.ShouldAurasBeSecret() then
+        return true, "secret restrictions"
+    end
+
+    if (UnitAffectingCombat and UnitAffectingCombat("player"))
+        or (InCombatLockdown and InCombatLockdown()) then
+        return true, "combat"
+    end
+
+    return false
+end
+
 function addon:GetConsumptionState()
+    local skipAuraQueries, skipReason = self:ShouldSkipAuraQueries()
+    if skipAuraQueries then
+        return {
+            eating = false,
+            drinking = false,
+            wellFed = self.lastKnownWellFed or false,
+            eatingDuration = nil,
+            drinkingDuration = nil,
+            auras = {},
+            auraQueriesSkipped = true,
+            auraQueryReason = skipReason,
+        }
+    end
+
     local state = {
         eating = false,
         drinking = false,
@@ -128,6 +154,7 @@ function addon:GetConsumptionState()
         eatingDuration = nil,
         drinkingDuration = nil,
         auras = getAuraRecords(),
+        auraQueriesSkipped = false,
     }
 
     if UnitChannelInfo then
@@ -152,5 +179,6 @@ function addon:GetConsumptionState()
         end
     end
 
+    self.lastKnownWellFed = state.wellFed
     return state
 end

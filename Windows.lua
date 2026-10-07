@@ -54,7 +54,7 @@ end
 function addon:CreateSettingsWindow()
     local panel = CreateFrame("Frame", "SurvivalNotJustForHuntersSettings",
         UIParent, "BackdropTemplate")
-    configureWindow(panel, 360, 300)
+    configureWindow(panel, 390, 300)
     createTitle(panel, "Survival Settings", -22)
 
     local settingsTab = CreateFrame("Button", nil, panel, "UIPanelButtonTemplate")
@@ -78,7 +78,7 @@ function addon:CreateSettingsWindow()
 
     local description = settingsContent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     description:SetPoint("TOPLEFT", settingsContent, "TOPLEFT", 4, -4)
-    description:SetWidth(298)
+    description:SetWidth(328)
     description:SetJustifyH("LEFT")
     description:SetText("Hunger and thirst decrease over time. Eat and drink to restore them.")
 
@@ -149,7 +149,7 @@ function addon:CreateSettingsWindow()
     for index = 1, 7 do
         local line = statisticsContent:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         line:SetPoint("TOPLEFT", statisticsContent, "TOPLEFT", 12, -10 - (index - 1) * 24)
-        line:SetWidth(285)
+        line:SetWidth(315)
         line:SetJustifyH("LEFT")
         statisticsLines[index] = line
     end
