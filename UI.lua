@@ -1,5 +1,13 @@
 local addonName, addon = ...
 
+local temperatureColors = {
+    [-2] = { 0.12, 0.32, 0.85 },
+    [-1] = { 0.2, 0.65, 0.95 },
+    [0] = { 0.4, 0.75, 0.5 },
+    [1] = { 0.98, 0.67, 0.2 },
+    [2] = { 0.95, 0.28, 0.12 },
+}
+
 local function createStatusBar(parent, label, y, height)
     local bar = CreateFrame("StatusBar", nil, parent)
     bar:SetSize(220, height or 20)
@@ -37,7 +45,6 @@ local function createTemperatureBar(parent)
 
     local labels = {
         { text = "Cold", point = "TOPLEFT", relativePoint = "BOTTOMLEFT", justify = "LEFT" },
-        { text = "Neutral", point = "TOP", relativePoint = "BOTTOM", justify = "CENTER" },
         { text = "Hot", point = "TOPRIGHT", relativePoint = "BOTTOMRIGHT", justify = "RIGHT" },
     }
     for _, data in ipairs(labels) do
@@ -169,21 +176,14 @@ function addon:UpdateDisplay()
     self.temperatureMarker:SetPoint("CENTER", self.temperatureBar, "LEFT",
         2 + position * (self.temperatureBar:GetWidth() - 4), 0)
 
-    if temperature.value < 0 then
-        self.temperatureBar:SetStatusBarColor(0.2, 0.5, 0.95)
-        self.temperatureMarker:SetColorTexture(0.2, 0.5, 0.95)
-        self.temperatureBar.text:SetText(temperature.value == -2
-            and "Temperature: Very Cold" or "Temperature: Cold")
-    elseif temperature.value > 0 then
-        self.temperatureBar:SetStatusBarColor(0.95, 0.42, 0.16)
-        self.temperatureMarker:SetColorTexture(0.95, 0.42, 0.16)
-        self.temperatureBar.text:SetText(temperature.value == 2
-            and "Temperature: Very Hot" or "Temperature: Hot")
-    else
-        self.temperatureBar:SetStatusBarColor(0.4, 0.75, 0.5)
-        self.temperatureMarker:SetColorTexture(0.4, 0.75, 0.5)
-        self.temperatureBar.text:SetText("Temperature: Neutral")
-    end
+    local temperatureColor = temperatureColors[temperature.value] or temperatureColors[0]
+    self.temperatureBar:SetStatusBarColor(unpack(temperatureColor))
+    self.temperatureMarker:SetColorTexture(unpack(temperatureColor))
+    local temperatureLabel = temperature.value <= -2 and "Cold"
+        or (temperature.value < 0 and "Cool"
+            or (temperature.value >= 2 and "Hot"
+                or (temperature.value > 0 and "Warm" or "Neutral")))
+    self.temperatureBar.text:SetText("Temperature: " .. temperatureLabel)
 
     self.hungerBar.text:SetText(string.format("%s: %d%%",
         self.hungerBar.label, math.floor(hunger)))

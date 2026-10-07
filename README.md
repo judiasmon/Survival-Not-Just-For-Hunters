@@ -11,7 +11,7 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 - Eating or drinking refills its meter at 100% divided by the buff duration, capped at 100%.
 - The Well Fed buff halves hunger and thirst depletion.
 - Unmounted movement and combat each double hunger and thirst depletion; the multipliers stack.
-- Mapped cold zones increase hunger depletion, while hot zones increase thirst depletion. Searing Gorge, Burning Steppes, and most of Stranglethorn Vale are very hot; Booty Bay is hot. The temperature gauge runs from cold on the left through neutral to hot on the right; indoor areas are neutral.
+- Mapped cold zones increase hunger depletion, while warm zones increase thirst depletion. Searing Gorge, Burning Steppes, and most of Stranglethorn Vale are hot; Booty Bay is warm. The temperature gauge runs from cold on the left through neutral to hot on the right; indoor areas are neutral.
 - Hunger, thirst, or fatigue reaching 10%, 5%, and 0% plays the mapped race- and gender-specific low-energy sound when available. At zero on any of those meters, a race- and gender-specific cry sound plays immediately and every 10 seconds until all recover above zero. Unmapped low-energy voices are reported in `/survival debug`.
 - Settings open from the minimap button or with `/survival` or `/snjh`.
 - Settings include a Statistics tab tracking eating/drinking sessions, resting time, time below 25% hunger or thirst, and the most recent eating/drinking times.
@@ -23,17 +23,18 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 ## Temperature map
 
 Temperature is checked from the current zone and subzone. Dun Morogh and
-Winterspring are very cold; Alterac Mountains, Hillsbrad Foothills, both
-Plaguelands, and The Hinterlands are cold. The Barrens, Badlands, Blasted Lands,
-Un'Goro Crater, and Silithus are hot;
-Searing Gorge, Burning Steppes, and most of Stranglethorn Vale are very hot;
-Tanaris is very hot. Booty Bay, Ironforge, Everlook, Ratchet, The Crossroads,
-Gadgetzan, Steamwheedle Port, and Caverns of Time have specific subzone
-overrides. Indoor areas are neutral. Unmapped locations default to neutral.
+Winterspring are cold; Alterac Mountains, Hillsbrad Foothills, both
+Plaguelands, and The Hinterlands are cool. The Barrens, Badlands, Blasted Lands,
+Un'Goro Crater, and Silithus are warm; Searing Gorge, Burning Steppes, and most
+of Stranglethorn Vale are hot; Tanaris is hot. Booty Bay, Ironforge, Everlook,
+Ratchet, The Crossroads, Gadgetzan, Steamwheedle Port, and Caverns of Time have
+specific subzone overrides. Indoor areas are neutral. Unmapped locations
+default to neutral.
 
-Each temperature level increases the relevant drain by 20%: cold affects
-hunger, while heat affects thirst. The gauge runs from very cold at the left
-through neutral in the center to very hot at the right.
+Each temperature level increases the relevant drain by 20%: cold and cool
+affect hunger, while warm and hot affect thirst. The gauge marker changes color
+by level, from dark blue at cold through green at neutral to red at hot. Its
+scale is labeled Cold at the left and Hot at the right.
 
 ## Statistics
 
