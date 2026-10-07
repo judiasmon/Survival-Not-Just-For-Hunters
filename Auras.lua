@@ -119,17 +119,22 @@ local function classifyAura(aura)
 end
 
 function addon:ShouldSkipAuraQueries()
-    if C_Secrets and C_Secrets.ShouldAurasBeSecret
+    if C_Secrets and type(C_Secrets.ShouldAurasBeSecret) == "function"
         and C_Secrets.ShouldAurasBeSecret() then
-        return true
+        return true, "secret restrictions"
     end
 
-    return (UnitAffectingCombat and UnitAffectingCombat("player"))
-        or (InCombatLockdown and InCombatLockdown())
+    if (UnitAffectingCombat and UnitAffectingCombat("player"))
+        or (InCombatLockdown and InCombatLockdown()) then
+        return true, "combat"
+    end
+
+    return false
 end
 
 function addon:GetConsumptionState()
-    if self:ShouldSkipAuraQueries() then
+    local skipAuraQueries, skipReason = self:ShouldSkipAuraQueries()
+    if skipAuraQueries then
         return {
             eating = false,
             drinking = false,
@@ -137,6 +142,8 @@ function addon:GetConsumptionState()
             eatingDuration = nil,
             drinkingDuration = nil,
             auras = {},
+            auraQueriesSkipped = true,
+            auraQueryReason = skipReason,
         }
     end
 
@@ -147,6 +154,7 @@ function addon:GetConsumptionState()
         eatingDuration = nil,
         drinkingDuration = nil,
         auras = getAuraRecords(),
+        auraQueriesSkipped = false,
     }
 
     if UnitChannelInfo then

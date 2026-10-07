@@ -31,6 +31,8 @@ function addon:GetDebugText()
         "Eating: " .. (state.eating and "yes" or "no"),
         "Drinking: " .. (state.drinking and "yes" or "no"),
         "Well Fed: " .. (state.wellFed and "yes" or "no"),
+        "Aura queries: " .. (state.auraQueriesSkipped
+            and "skipped (" .. state.auraQueryReason .. ")" or "active"),
         "Moving: " .. (moving and "yes" or "no"),
         "Mounted: " .. (mounted and "yes" or "no"),
         "In combat: " .. (inCombat and "yes" or "no"),
@@ -89,7 +91,9 @@ function addon:GetDebugText()
         lines[#lines + 1] = "Instance detection unavailable."
     end
 
-    if #state.auras == 0 then
+    if state.auraQueriesSkipped then
+        lines[#lines + 1] = "Aura scan skipped; current aura state is unavailable."
+    elseif #state.auras == 0 then
         lines[#lines + 1] = "No active helpful auras found."
     else
         for index, aura in ipairs(state.auras) do
