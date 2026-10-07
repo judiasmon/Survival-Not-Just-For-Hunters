@@ -41,10 +41,10 @@ function addon:GetDebugText()
             temperature.subzone ~= "" and " - " .. temperature.subzone or ""),
         string.format("Indoors: %s", temperature.indoors and "yes" or "no"),
         string.format("Temperature: %s (%d)",
-            temperature.value <= -2 and "Very Cold"
-                or (temperature.value < 0 and "Cold"
-                    or (temperature.value >= 2 and "Very Hot"
-                        or (temperature.value > 0 and "Hot" or "Neutral"))),
+            temperature.value <= -2 and "Cold"
+                or (temperature.value < 0 and "Cool"
+                    or (temperature.value >= 2 and "Hot"
+                        or (temperature.value > 0 and "Warm" or "Neutral"))),
             temperature.value),
         "",
         "Current drain modifiers",
