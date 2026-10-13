@@ -32,7 +32,7 @@ function addon:UpdateStatistics(elapsed, consumptionState)
     if self.db.thirst < LOW_NEED_THRESHOLD then
         self.db.statsTimeThirsty = self.db.statsTimeThirsty + elapsed
     end
-    if IsResting and IsResting() then
+    if (IsResting and IsResting()) or current.welcomingCampfire then
         self.db.statsTimeResting = self.db.statsTimeResting + elapsed
     end
 end

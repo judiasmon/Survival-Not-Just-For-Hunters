@@ -5,9 +5,12 @@ local FATIGUE_RESTORATION_SECONDS = 5 * 60
 local LOW_NEED_THRESHOLD = 25
 local LOW_NEED_MAX_MULTIPLIER = 4
 
-function addon:GetFatigueState()
+function addon:GetFatigueState(consumptionState)
+    consumptionState = consumptionState or self:GetConsumptionState()
     local restingAvailable = IsResting ~= nil
-    local resting = restingAvailable and IsResting() or false
+    local restingArea = restingAvailable and IsResting() or false
+    local welcomingCampfire = consumptionState.welcomingCampfire
+    local resting = restingArea or welcomingCampfire
     local lowestNeed = math.min(self.db.hunger, self.db.thirst)
     local lowNeedMultiplier = 1
 
@@ -19,6 +22,8 @@ function addon:GetFatigueState()
 
     return {
         resting = resting,
+        restingArea = restingArea,
+        welcomingCampfire = welcomingCampfire,
         restingAvailable = restingAvailable,
         recovering = resting,
         lowNeedMultiplier = lowNeedMultiplier,
@@ -27,8 +32,8 @@ function addon:GetFatigueState()
     }
 end
 
-function addon:UpdateFatigue(elapsed, allowRestingRecovery)
-    local state = self:GetFatigueState()
+function addon:UpdateFatigue(elapsed, allowRestingRecovery, consumptionState)
+    local state = self:GetFatigueState(consumptionState)
     local recover = allowRestingRecovery ~= false and state.resting
     if recover then
         self.db.fatigue = math.min(self.MAX_VALUE,

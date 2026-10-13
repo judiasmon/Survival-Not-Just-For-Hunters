@@ -87,6 +87,7 @@ local function classifyAura(aura)
     local name = string.lower(aura.name or "")
     local icon = string.lower(tostring(aura.icon or ""))
     local isEating, isDrinking, isWellFed = getSpellFlags(aura.spellId)
+    local welcomingCampfire = name == "welcoming campfire"
 
     isEating = isEating or FOOD_SPELL_IDS[aura.spellId] == true
         or name:find("food", 1, true) ~= nil
@@ -115,7 +116,7 @@ local function classifyAura(aura)
         end
     end
 
-    return isEating, isDrinking, isWellFed
+    return isEating, isDrinking, isWellFed, welcomingCampfire
 end
 
 function addon:ShouldSkipAuraQueries()
@@ -142,6 +143,7 @@ function addon:GetConsumptionState()
             eatingDuration = nil,
             drinkingDuration = nil,
             auras = {},
+            welcomingCampfire = self.lastKnownWelcomingCampfire or false,
             auraQueriesSkipped = true,
             auraQueryReason = skipReason,
         }
@@ -151,6 +153,7 @@ function addon:GetConsumptionState()
         eating = false,
         drinking = false,
         wellFed = false,
+        welcomingCampfire = false,
         eatingDuration = nil,
         drinkingDuration = nil,
         auras = getAuraRecords(),
@@ -167,10 +170,11 @@ function addon:GetConsumptionState()
     end
 
     for _, aura in ipairs(state.auras) do
-        local eating, drinking, wellFed = classifyAura(aura)
+        local eating, drinking, wellFed, welcomingCampfire = classifyAura(aura)
         state.eating = state.eating or eating
         state.drinking = state.drinking or drinking
         state.wellFed = state.wellFed or wellFed
+        state.welcomingCampfire = state.welcomingCampfire or welcomingCampfire
         if eating and type(aura.duration) == "number" and aura.duration > 0 then
             state.eatingDuration = aura.duration
         end
@@ -180,5 +184,6 @@ function addon:GetConsumptionState()
     end
 
     self.lastKnownWellFed = state.wellFed
+    self.lastKnownWelcomingCampfire = state.welcomingCampfire
     return state
 end
