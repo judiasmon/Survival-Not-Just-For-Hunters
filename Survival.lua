@@ -101,8 +101,8 @@ local function onEvent(_, event)
             addon.db.fatigue = addon.MAX_VALUE
         elseif addon.db.lastUpdate > 0 and not addon.instanceState.disabled then
             local offlineElapsed = math.max(0, now - addon.db.lastUpdate)
-            addon:UpdateNeeds(offlineElapsed)
-            addon:UpdateFatigue(offlineElapsed, false)
+            local consumptionState = addon:UpdateNeeds(offlineElapsed)
+            addon:UpdateFatigue(offlineElapsed, false, consumptionState)
         end
         addon.db.lastUpdate = now
         if addon.instanceState.disabled then
@@ -144,7 +144,7 @@ ticker:SetScript("OnUpdate", function(self, elapsed)
     else
         addon:UpdateTemperature()
         local consumptionState = addon:UpdateNeeds(self.elapsed)
-        addon:UpdateFatigue(self.elapsed)
+        addon:UpdateFatigue(self.elapsed, nil, consumptionState)
         addon:UpdateNeedFeedback(self.elapsed)
         addon:UpdateStatistics(self.elapsed, consumptionState)
     end

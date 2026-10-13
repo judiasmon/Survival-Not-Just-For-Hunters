@@ -20,7 +20,7 @@ function addon:GetDebugText()
     local mounted = IsMounted and IsMounted() or false
     local inCombat = UnitAffectingCombat and UnitAffectingCombat("player") or false
     local temperature = self:GetTemperatureState()
-    local fatigue = self:GetFatigueState()
+    local fatigue = self:GetFatigueState(state)
     local instance = self:GetInstanceState()
     local lines = {
         string.format("Hunger: %.2f%%", self.db.hunger),
@@ -39,6 +39,7 @@ function addon:GetDebugText()
         string.format("Instance: %s (%s)", instance.instanceType,
             instance.disabled and "addon paused" or "active"),
         "Resting: " .. (fatigue.resting and "yes" or "no"),
+        "Welcoming campfire: " .. (fatigue.welcomingCampfire and "yes" or "no"),
         string.format("Fatigue state: %s", fatigue.recovering
             and "recovering" or "depleting"),
         string.format("Location: %s%s", temperature.zone,

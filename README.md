@@ -6,7 +6,7 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 
 - Hunger and thirst gradually decrease over time.
 - At Normal difficulty, hunger takes 180 minutes and thirst 150 minutes to deplete from full with no modifiers. The settings slider offers Casual (50%), Normal (100%), and Hardcore (200%) need depletion rates.
-- Fatigue takes about eight hours to deplete at normal hunger and thirst, drains faster when either need is below 25%, and recovers fully in about five minutes in WoW resting areas.
+- Fatigue takes about eight hours to deplete at normal hunger and thirst, drains faster when either need is below 25%, and recovers fully in about five minutes in WoW resting areas or while the "Welcoming Campfire" buff is active.
 - Logging out in a WoW resting area restores fatigue to full when logging back in.
 - Eating or drinking refills its meter at 100% divided by the buff duration, capped at 100%.
 - The Well Fed buff halves hunger and thirst depletion.
@@ -47,12 +47,10 @@ play only and pause in disabled instances.
 
 Fatigue depletes over about eight hours at normal hunger and thirst. If either
 need drops below 25%, fatigue drains faster, up to four times the normal rate
-when a need reaches zero. It recovers fully in about five minutes in a WoW
-resting area.
-
-Fatigue recovery currently uses WoW's resting-area API. General proximity to a
-cooking fire is not exposed as a player buff, so campsite recovery is not
-included yet.
+when a need reaches zero. It recovers fully in about five minutes in a WoW resting area or while the
+"Welcoming Campfire" buff is active. Aura detection follows the addon's safe aura
+query rules, so status is retained from the last scan while aura queries are
+unavailable during combat or secret-aura restrictions.
 
 ## Install
 
