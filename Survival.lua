@@ -37,6 +37,22 @@ function addon:IsSecretValue(value)
     return issecretvalue and issecretvalue(value) or false
 end
 
+function addon:UpdatePlayerRaceTraits()
+    self.isDwarf = false
+    self.isUndead = false
+    if not UnitRace then
+        return
+    end
+
+    local _, race = UnitRace("player")
+    if self:IsSecretValue(race) or type(race) ~= "string" then
+        return
+    end
+
+    self.isDwarf = race == "Dwarf"
+    self.isUndead = race == "Scourge" or race == "Undead"
+end
+
 function addon:InitializeDatabase()
     local database = SurvivalNotJustForHuntersDB
     if type(database) ~= "table" then
@@ -92,6 +108,7 @@ end
 local function onEvent(_, event)
     if event == "PLAYER_LOGIN" then
         addon:InitializeDatabase()
+        addon:UpdatePlayerRaceTraits()
         addon:UpdateTemperature()
         addon.instanceState = addon:GetInstanceState()
         local now = time()
@@ -99,10 +116,6 @@ local function onEvent(_, event)
         addon.db.fatigueRestedLogout = false
         if restoreFatigueFromRestedLogout then
             addon.db.fatigue = addon.MAX_VALUE
-        elseif addon.db.lastUpdate > 0 and not addon.instanceState.disabled then
-            local offlineElapsed = math.max(0, now - addon.db.lastUpdate)
-            local consumptionState = addon:UpdateNeeds(offlineElapsed)
-            addon:UpdateFatigue(offlineElapsed, false, consumptionState)
         end
         addon.db.lastUpdate = now
         if addon.instanceState.disabled then

@@ -5,6 +5,7 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 ## Features
 
 - Hunger and thirst gradually decrease over time.
+- Hunger, thirst, and fatigue do not deplete while offline. Logging out in a rested area still restores fatigue to full on login.
 - At Normal difficulty, hunger takes 180 minutes and thirst 150 minutes to deplete from full with no modifiers. The settings slider offers Casual (50%), Normal (100%), and Hardcore (200%) need depletion rates.
 - Fatigue takes about eight hours to deplete at normal hunger and thirst, drains faster when either need is below 25%, and recovers fully in about five minutes in WoW resting areas or while the "Welcoming Campfire" buff is active.
 - Logging out in a WoW resting area restores fatigue to full when logging back in.
@@ -12,6 +13,7 @@ A WoW Forever addon that adds hunger and thirst survival meters.
 - The Well Fed buff halves hunger and thirst depletion.
 - Unmounted movement and combat each double hunger and thirst depletion, but do not stack because movement cannot be detected reliably during combat.
 - Mapped cold zones increase hunger depletion, while warm zones increase thirst depletion. Searing Gorge, Burning Steppes, and most of Stranglethorn Vale are hot; Booty Bay is warm. The temperature gauge runs from cold on the left through neutral to hot on the right; indoor areas are neutral.
+- Dwarves are immune to cold-related hunger effects, and undead are immune to all temperature-related need effects. The temperature gauge still shows the ambient zone temperature.
 - Hunger, thirst, or fatigue reaching 10%, 5%, and 0% plays the mapped race- and gender-specific low-energy sound when available. At zero on any of those meters, a race- and gender-specific cry sound plays immediately and every 10 seconds until all recover above zero. Unmapped low-energy voices are reported in `/survival debug`.
 - Settings open from the minimap button or with `/survival` or `/snjh`.
 - Settings include a Statistics tab tracking eating/drinking sessions, resting time, time below 25% hunger or thirst, and the most recent eating/drinking times.

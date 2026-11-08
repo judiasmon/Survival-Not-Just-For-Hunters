@@ -61,6 +61,8 @@ function addon:GetDebugText()
             self.db.needDifficulty, modifiers.difficulty),
         string.format("Temperature hunger: x%.2f", modifiers.temperatureHunger),
         string.format("Temperature thirst: x%.2f", modifiers.temperatureThirst),
+        "Temperature effects: " .. (modifiers.temperatureEffectsImmune
+            and "immune" or "active"),
         string.format("Temperature effect per level: +%.0f%% drain",
             self.db.temperatureDrainPerLevel * 100),
         string.format("Fatigue drain: %.4f%% per second (%.1f hours at normal needs)",

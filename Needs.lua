@@ -24,10 +24,14 @@ function addon:GetDrainModifiers(state)
     local combat = UnitAffectingCombat and UnitAffectingCombat("player")
         and self.db.combatDrainMultiplier or 1
     local wellFed = state.wellFed and self.db.wellFedDrainMultiplier or 1
-    local temperatureHunger = temperature.value < 0
-        and 1 + math.abs(temperature.value) * self.db.temperatureDrainPerLevel or 1
-    local temperatureThirst = temperature.value > 0
-        and 1 + temperature.value * self.db.temperatureDrainPerLevel or 1
+    local temperatureEffectsValue = temperature.value
+    if self.isUndead or (self.isDwarf and temperature.value < 0) then
+        temperatureEffectsValue = 0
+    end
+    local temperatureHunger = temperatureEffectsValue < 0
+        and 1 + math.abs(temperatureEffectsValue) * self.db.temperatureDrainPerLevel or 1
+    local temperatureThirst = temperatureEffectsValue > 0
+        and 1 + temperatureEffectsValue * self.db.temperatureDrainPerLevel or 1
 
     return {
         movement = movement,
@@ -36,6 +40,8 @@ function addon:GetDrainModifiers(state)
         total = movement * combat * wellFed,
         difficulty = self:GetDifficultyMultiplier(),
         temperature = temperature.value,
+        temperatureEffectsImmune = self.isUndead
+            or (self.isDwarf and temperature.value < 0),
         temperatureHunger = temperatureHunger,
         temperatureThirst = temperatureThirst,
     }
